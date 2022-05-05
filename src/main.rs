@@ -7,15 +7,37 @@ use std::{
 
 use bbqueue_sync::{Producer, GrantW, BBBuffer, Consumer};
 use rzcobs::Write;
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
 use core::mem::MaybeUninit;
 use groundhog::{std_timer::Timer, RollingTimer};
 use tracing::{event, Id, Level};
 use tracing_core::{span::Current, Collect, Dispatch};
 use tracing_serde::AsSerde;
 
-static PC: PlayCollector = PlayCollector;
-static CTR: AtomicU32 = AtomicU32::new(1);
+fn main() {
+    let cons = BQ.init().unwrap();
+    let disp = Dispatch::from_static(&BQ);
+    tracing::dispatch::set_global_default(disp).unwrap();
+    println!("Hello, world!");
+
+    let span = tracing::span!(Level::TRACE, "outer_span");
+    let _ = span.enter();
+    do_thing::doit();
+
+    let rgr = cons.read().unwrap();
+    println!("{:?}", &rgr);
+}
+
+pub mod do_thing {
+    use super::*;
+    pub fn doit() {
+        let span = tracing::span!(Level::TRACE, "my span");
+        span.in_scope(|| {
+            event!(Level::INFO, "something has happened!");
+        });
+    }
+}
+
 
 static BQ: BBQCollector<Timer<1_000_000>, 16384, 512> = BBQCollector::new();
 
@@ -28,12 +50,14 @@ pub enum TWOther {
     },
 }
 
+// TODO: No Deserialize!
 #[derive(Serialize)]
 pub struct Packet<'a> {
     message: TracingWire<'a>,
     tick: u64,
 }
 
+// TODO: No Deserialize!
 #[derive(Serialize)]
 pub enum TracingWire<'a> {
     Enabled(tracing_serde::SerializeMetadata<'a>),
@@ -137,12 +161,14 @@ where
     }
 
     fn encode(&self, msg: TracingWire<'_>) {
+        // Attempt to get the buffer. Fails if it was not initialized
         let prod = if let Ok(prod) = self.get_prod() {
             prod
         } else {
             return;
         };
 
+        // Attemt to get a write space. Fails if we don't have enough space
         let mut wgr = if let Ok(wgr) = prod.grant_exact(MAX_SINGLE) {
             wgr
         } else {
@@ -157,6 +183,7 @@ where
             tick: timer.get_ticks() as u64,
         };
 
+        // Serialize to postcard, NOT COBS encoded
         let used = match postcard::to_slice(&msg, scratch.as_mut_slice()) {
             Ok(used) => used,
             Err(_) => {
@@ -180,13 +207,18 @@ where
             }
         }
 
+        // Encode to COBS for framing
         let mut enc = rzcobs::Encoder::new(RWriter { offset: 0, buf: &mut wgr });
         let res = used.iter().try_for_each(|b| enc.write(*b));
         if res.is_ok() {
             if enc.writer().write(0).is_ok() {
                 let offset = enc.writer().offset;
                 wgr.commit(offset);
+            } else {
+                // TODO recover
             }
+        } else {
+            // TODO recover
         }
     }
 }
@@ -238,103 +270,3 @@ where
     }
 }
 
-fn main() {
-    let cons = BQ.init().unwrap();
-    let disp = Dispatch::from_static(&BQ);
-    tracing::dispatch::set_global_default(disp).unwrap();
-    println!("Hello, world!");
-
-    let span = tracing::span!(Level::TRACE, "outer_span");
-    let _ = span.enter();
-    do_thing::doit();
-
-    let rgr = cons.read().unwrap();
-    println!("{:?}", &rgr);
-}
-
-pub mod do_thing {
-    use super::*;
-    pub fn doit() {
-        let span = tracing::span!(Level::TRACE, "my span");
-        span.in_scope(|| {
-            event!(Level::INFO, "something has happened!");
-        });
-    }
-}
-
-struct PlayCollector;
-
-fn next_span_id() -> Id {
-    loop {
-        let next = CTR.fetch_add(1, Ordering::SeqCst);
-        if let Some(nzu64) = NonZeroU64::new(next as u64) {
-            return Id::from_non_zero_u64(nzu64);
-        }
-    }
-}
-
-fn line() {
-    println!("==================================================");
-}
-
-impl Collect for PlayCollector {
-    fn enabled(&self, metadata: &tracing::Metadata<'_>) -> bool {
-        line();
-        println!(
-            "ENABLED: {}",
-            serde_json::to_string(&metadata.as_serde()).unwrap()
-        );
-
-        // If we support filtering at some point, this should be changed.
-        true
-    }
-
-    fn new_span(&self, span: &tracing_core::span::Attributes<'_>) -> tracing_core::span::Id {
-        line();
-        println!(
-            "NEW SPAN: {}",
-            serde_json::to_string(&span.as_serde()).unwrap()
-        );
-        next_span_id()
-    }
-
-    fn record(&self, span: &tracing_core::span::Id, values: &tracing_core::span::Record<'_>) {
-        line();
-        println!(
-            "RECORD id: {} values: {}",
-            serde_json::to_string(&span.as_serde()).unwrap(),
-            serde_json::to_string(&values.as_serde()).unwrap(),
-        );
-    }
-
-    fn record_follows_from(&self, span: &tracing_core::span::Id, follows: &tracing_core::span::Id) {
-        line();
-        println!(
-            "RECFOLFRM id: {} values: {}",
-            serde_json::to_string(&span.as_serde()).unwrap(),
-            serde_json::to_string(&follows.as_serde()).unwrap(),
-        );
-    }
-
-    fn event(&self, event: &tracing::Event<'_>) {
-        line();
-        println!(
-            "EVENT {}",
-            serde_json::to_string(&event.as_serde()).unwrap()
-        );
-    }
-
-    fn enter(&self, span: &tracing_core::span::Id) {
-        line();
-        println!("ENTER {}", serde_json::to_string(&span.as_serde()).unwrap());
-    }
-
-    fn exit(&self, span: &tracing_core::span::Id) {
-        line();
-        println!("EXIT {}", serde_json::to_string(&span.as_serde()).unwrap());
-    }
-
-    fn current_span(&self) -> Current {
-        Current::unknown()
-    }
-}
