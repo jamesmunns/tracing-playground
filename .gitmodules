@@ -1,0 +1,6 @@
+[submodule "tracing"]
+	path = tracing
+	url = https://github.com/jamesmunns/tracing
+[submodule "postcard"]
+	path = postcard
+	url = https://github.com/jamesmunns/postcard

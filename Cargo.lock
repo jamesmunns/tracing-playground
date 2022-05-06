@@ -194,8 +194,6 @@ checksum = "e0a7ae3ac2f1173085d398531c705756c94a4c56843785df85a60c1a0afac116"
 [[package]]
 name = "postcard"
 version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a25c0b0ae06fcffe600ad392aabfa535696c8973f2253d9ac83171924c58a858"
 dependencies = [
  "heapless",
  "postcard-cobs",
@@ -366,7 +364,6 @@ dependencies = [
 [[package]]
 name = "tracing"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tracing/?branch=master#e0642d949891546a3bb7e47080365ee7274f05cd"
 dependencies = [
  "cfg-if",
  "pin-project-lite",
@@ -376,7 +373,9 @@ dependencies = [
 [[package]]
 name = "tracing-core"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tracing/?branch=master#e0642d949891546a3bb7e47080365ee7274f05cd"
+dependencies = [
+ "lazy_static",
+]
 
 [[package]]
 name = "tracing-playground"
@@ -390,13 +389,12 @@ dependencies = [
  "serde_json",
  "tracing",
  "tracing-core",
- "tracing-serde",
+ "tracing-serde-structs",
 ]
 
 [[package]]
-name = "tracing-serde"
+name = "tracing-serde-structs"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tracing/?branch=master#e0642d949891546a3bb7e47080365ee7274f05cd"
 dependencies = [
  "serde",
  "tracing-core",

@@ -7,7 +7,7 @@ use std::{
 
 use bbqueue_sync::{Producer, GrantW, BBBuffer, Consumer};
 use rzcobs::Write;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use core::mem::MaybeUninit;
 use groundhog::{std_timer::Timer, RollingTimer};
 use tracing::{event, Id, Level};
@@ -24,8 +24,25 @@ fn main() {
     let _ = span.enter();
     do_thing::doit();
 
-    let rgr = cons.read().unwrap();
-    println!("{:?}", &rgr);
+    let mut data = cons.read().unwrap().to_vec();
+
+    while !data.is_empty() {
+        let pos = match data.iter().position(|b| *b == 0) {
+            Some(p) => p,
+            None => {
+                println!("What?");
+                break;
+            }
+        };
+        let later = data.split_off(pos + 1);
+        assert_eq!(Some(0), data.pop());
+        println!("{:?}", data);
+        let decoded = rzcobs::decode(&data[..data.len() - 1]).unwrap();
+        println!("{:?}", decoded);
+        data = later;
+        let deser: Packet<'_> = postcard::from_bytes(&decoded).unwrap();
+        println!("{:?}", deser);
+    }
 }
 
 pub mod do_thing {
@@ -50,29 +67,29 @@ pub enum TWOther {
     },
 }
 
-// TODO: No Deserialize!
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Packet<'a> {
+    #[serde(borrow)]
     message: TracingWire<'a>,
     tick: u64,
 }
 
-// TODO: No Deserialize!
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum TracingWire<'a> {
+    #[serde(borrow)]
     Enabled(tracing_serde::SerializeMetadata<'a>),
     NewSpan(tracing_serde::SerializeAttributes<'a>),
     Record {
         values: tracing_serde::SerializeRecord<'a>,
-        span: tracing_serde::SerializeId<'a>,
+        span: tracing_serde::SerializeId,
     },
     RecordFollowsFrom {
-        follows: tracing_serde::SerializeId<'a>,
-        span: tracing_serde::SerializeId<'a>,
+        follows: tracing_serde::SerializeId,
+        span: tracing_serde::SerializeId,
     },
     Event(tracing_serde::SerializeEvent<'a>),
-    Enter(tracing_serde::SerializeId<'a>),
-    Exit(tracing_serde::SerializeId<'a>),
+    Enter(tracing_serde::SerializeId),
+    Exit(tracing_serde::SerializeId),
     Other,
 }
 
