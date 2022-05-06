@@ -9,6 +9,7 @@ edition = "2021"
 serde_json = "1.0.81"
 bbqueue-sync = "0.5.1"
 rzcobs = "0.1.2"
+kolben = "0.0.3"
 
 [dependencies.postcard]
 version = "0.7.3"

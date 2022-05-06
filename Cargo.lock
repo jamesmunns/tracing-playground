@@ -143,6 +143,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aab8fc367588b89dcee83ab0fd66b72b50b72fa1904d7095045ace2b0c81c35"
 
 [[package]]
+name = "kolben"
+version = "0.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f10c20b5bb7daebf79b3d5aa65dad7d48fa8f4b9aa7c0650b96b9ba0f97d9da"
+dependencies = [
+ "postcard-cobs",
+ "rcobs",
+ "rzcobs",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -223,6 +234,12 @@ checksum = "a1feb54ed693b93a84e14094943b84b7c4eae204c512b7ccb95ab0c66d278ad1"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "rcobs"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06cdc4ce376f8155e90aa043d76cd40ecd11b2ec4bb4dea713194683ae01a252"
 
 [[package]]
 name = "regex"
@@ -383,6 +400,7 @@ version = "0.1.0"
 dependencies = [
  "bbqueue-sync",
  "groundhog",
+ "kolben",
  "postcard",
  "rzcobs",
  "serde",
