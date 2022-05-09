@@ -32,7 +32,7 @@ fn main() {
     tracing::dispatch::set_global_default(disp).unwrap();
 
     let span = tracing::span!(Level::TRACE, "outer_span");
-    let _ = span.enter();
+    let _span = span.enter();
     do_thing::doit();
 
     // println!("===========================");
