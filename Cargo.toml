@@ -39,12 +39,19 @@ default-features = false
 path = "./tracing/tracing"
 default-features = false
 
+[dependencies.tracing-serde-structs]
+# git = "https://github.com/tokio-rs/tracing/"
+# version = "0.2.0"
+# branch = "master"
+path = "./tracing/tracing-serde-structs"
+default-features = false
+features = ["std"]
+
 [dependencies.tracing-serde]
 # git = "https://github.com/tokio-rs/tracing/"
 # version = "0.2.0"
 # branch = "master"
-package = "tracing-serde-structs"
-path = "./tracing/tracing-serde-structs"
+path = "./tracing/tracing-serde"
 default-features = false
 features = ["std"]
 

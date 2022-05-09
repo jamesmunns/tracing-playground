@@ -407,13 +407,23 @@ dependencies = [
  "serde_json",
  "tracing",
  "tracing-core",
+ "tracing-serde",
  "tracing-serde-structs",
+]
+
+[[package]]
+name = "tracing-serde"
+version = "0.2.0"
+dependencies = [
+ "serde",
+ "tracing-core",
 ]
 
 [[package]]
 name = "tracing-serde-structs"
 version = "0.2.0"
 dependencies = [
+ "heapless",
  "serde",
  "tracing-core",
 ]

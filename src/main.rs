@@ -12,7 +12,7 @@ use rzcobs::{Write, self};
 use serde::{Deserialize, Serialize};
 use tracing::{event, Id, Level};
 use tracing_core::{span::Current, Collect, Dispatch};
-use tracing_serde::AsSerde;
+use tracing_serde_structs::AsSerde;
 
 // fn main() {
 //     let msg: &[u8] = &[
@@ -30,13 +30,12 @@ fn main() {
     let cons = BQ.init().unwrap();
     let disp = Dispatch::from_static(&BQ);
     tracing::dispatch::set_global_default(disp).unwrap();
-    println!("Hello, world!");
 
     let span = tracing::span!(Level::TRACE, "outer_span");
     let _ = span.enter();
     do_thing::doit();
 
-    println!("===========================");
+    // println!("===========================");
 
     let mut data = cons.read().unwrap().to_vec();
 
@@ -52,10 +51,11 @@ fn main() {
         };
 
         let later = data.split_off(pos + 1);
+        // println!("{:?}", data);
         assert_eq!(Some(0), data.pop());
         let decoded = rzcobs::decode(&data[..data.len()]).unwrap();
         match postcard::from_bytes::<Packet<'_>>(&decoded) {
-            Ok(p) => println!("{:?}", p),
+            Ok(p) => {}, // println!("{:?}", p),
             Err(e) => {
                 println!(">>>{}<<<", ct);
                 println!("!!!{:?}!!!", &data);
@@ -99,19 +99,19 @@ pub struct Packet<'a> {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum TracingWire<'a> {
     #[serde(borrow)]
-    Enabled(tracing_serde::SerializeMetadata<'a>),
-    NewSpan(tracing_serde::SerializeAttributes<'a>),
+    Enabled(tracing_serde_structs::SerializeMetadata<'a>),
+    NewSpan(tracing_serde_structs::SerializeAttributes<'a>),
     Record {
-        values: tracing_serde::SerializeRecord<'a>,
-        span: tracing_serde::SerializeId,
+        values: tracing_serde_structs::SerializeRecord<'a>,
+        span: tracing_serde_structs::SerializeId,
     },
     RecordFollowsFrom {
-        follows: tracing_serde::SerializeId,
-        span: tracing_serde::SerializeId,
+        follows: tracing_serde_structs::SerializeId,
+        span: tracing_serde_structs::SerializeId,
     },
-    Event(tracing_serde::SerializeEvent<'a>),
-    Enter(tracing_serde::SerializeId),
-    Exit(tracing_serde::SerializeId),
+    Event(tracing_serde_structs::SerializeEvent<'a>),
+    Enter(tracing_serde_structs::SerializeId),
+    Exit(tracing_serde_structs::SerializeId),
     Other,
 }
 
@@ -198,7 +198,7 @@ where
     }
 
     fn encode(&self, msg: TracingWire<'_>) {
-        println!("{:?}", msg);
+        // println!("{:?}", msg);
         // Attempt to get the buffer. Fails if it was not initialized
         let prod = if let Ok(prod) = self.get_prod() {
             prod
@@ -230,7 +230,7 @@ where
             }
         };
 
-        println!("{:?}", used);
+        // println!("{:?}", used);
 
         #[derive(Debug)]
         struct RWriter<'a> {
@@ -270,7 +270,7 @@ where
             if enc.end().is_ok() {
                 if enc.writer().push_one(0).is_ok() {
                     let offset = enc.writer().offset;
-                    println!("--{:?}", &wgr[..offset]);
+                    // println!("--{:?}", &wgr[..offset]);
                     // assert_eq!(&venc, &wgr[..offset-1]);
                     wgr.commit(offset);
                 } else {
@@ -291,17 +291,25 @@ where
     TIMER: RollingTimer<Tick = u32> + Default + 'static,
 {
     fn enabled(&self, metadata: &tracing::Metadata<'_>) -> bool {
+        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(metadata)).unwrap());
+        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(metadata)).unwrap());
         // TODO: always enabled for now.
         self.encode(TracingWire::Enabled(metadata.as_serde()));
         true
     }
 
     fn new_span(&self, span: &tracing_core::span::Attributes<'_>) -> tracing_core::span::Id {
+        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
+        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(span)).unwrap());
         self.encode(TracingWire::NewSpan(span.as_serde()));
         self.get_next_id()
     }
 
     fn record(&self, span: &tracing_core::span::Id, values: &tracing_core::span::Record<'_>) {
+        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
+        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(span)).unwrap());
+        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(values)).unwrap());
+        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(values)).unwrap());
         self.encode(TracingWire::Record {
             span: span.as_serde(),
             values: values.as_serde(),
@@ -309,6 +317,10 @@ where
     }
 
     fn record_follows_from(&self, span: &tracing_core::span::Id, follows: &tracing_core::span::Id) {
+        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
+        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(span)).unwrap());
+        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(follows)).unwrap());
+        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(follows)).unwrap());
         self.encode(TracingWire::RecordFollowsFrom {
             span: span.as_serde(),
             follows: follows.as_serde(),
@@ -316,14 +328,20 @@ where
     }
 
     fn event(&self, event: &tracing::Event<'_>) {
+        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(event)).unwrap());
+        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(event)).unwrap());
         self.encode(TracingWire::Event(event.as_serde()));
     }
 
     fn enter(&self, span: &tracing_core::span::Id) {
+        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
+        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(span)).unwrap());
         self.encode(TracingWire::Enter(span.as_serde()))
     }
 
     fn exit(&self, span: &tracing_core::span::Id) {
+        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
+        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(span)).unwrap());
         self.encode(TracingWire::Exit(span.as_serde()))
     }
 
