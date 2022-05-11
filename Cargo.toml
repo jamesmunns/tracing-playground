@@ -25,6 +25,9 @@ version = "1.0.137"
 default-features = false
 features = ["derive"]
 
+[dependencies.tracing-serde-wire]
+path = "./crates/tracing-serde-wire"
+
 [dependencies.tracing-core]
 # git = "https://github.com/tokio-rs/tracing/"
 # version = "0.2.0"
@@ -38,14 +41,6 @@ default-features = false
 # branch = "master"
 path = "./tracing/tracing"
 default-features = false
-
-[dependencies.tracing-serde-structs]
-# git = "https://github.com/tokio-rs/tracing/"
-# version = "0.2.0"
-# branch = "master"
-path = "./tracing/tracing-serde-structs"
-default-features = false
-features = ["std"]
 
 [dependencies.tracing-serde]
 # git = "https://github.com/tokio-rs/tracing/"

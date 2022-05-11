@@ -9,10 +9,11 @@ use bbqueue_sync::{BBBuffer, Consumer, GrantW, Producer};
 use core::mem::MaybeUninit;
 use groundhog::{std_timer::Timer, RollingTimer};
 use rzcobs::{Write, self};
-use serde::{Deserialize, Serialize};
 use tracing::{event, Id, Level};
 use tracing_core::{span::Current, Collect, Dispatch};
-use tracing_serde_structs::AsSerde;
+use tracing_serde::AsSerde;
+use tracing_serde_wire::Packet;
+use tracing_serde_wire::TracingWire;
 
 // fn main() {
 //     let msg: &[u8] = &[
@@ -79,41 +80,6 @@ pub mod do_thing {
 }
 
 static BQ: BBQCollector<Timer<1_000_000>, 16384, 512> = BBQCollector::new();
-
-pub enum TWOther {
-    MessageDiscarded,
-    DeviceInfo {
-        clock_id: u32,
-        ticks_per_sec: u32,
-        device_id: [u8; 16],
-    },
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Packet<'a> {
-    #[serde(borrow)]
-    message: TracingWire<'a>,
-    tick: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum TracingWire<'a> {
-    #[serde(borrow)]
-    Enabled(tracing_serde_structs::SerializeMetadata<'a>),
-    NewSpan(tracing_serde_structs::SerializeAttributes<'a>),
-    Record {
-        values: tracing_serde_structs::SerializeRecord<'a>,
-        span: tracing_serde_structs::SerializeId,
-    },
-    RecordFollowsFrom {
-        follows: tracing_serde_structs::SerializeId,
-        span: tracing_serde_structs::SerializeId,
-    },
-    Event(tracing_serde_structs::SerializeEvent<'a>),
-    Enter(tracing_serde_structs::SerializeId),
-    Exit(tracing_serde_structs::SerializeId),
-    Other,
-}
 
 pub struct BBQCollector<TIMER, const TTL_SIZE: usize, const MAX_SINGLE: usize> {
     initialized: AtomicBool,
@@ -291,25 +257,20 @@ where
     TIMER: RollingTimer<Tick = u32> + Default + 'static,
 {
     fn enabled(&self, metadata: &tracing::Metadata<'_>) -> bool {
-        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(metadata)).unwrap());
-        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(metadata)).unwrap());
+        // Note: nothing to log here, this is a `query` whether the trace is active
         // TODO: always enabled for now.
-        self.encode(TracingWire::Enabled(metadata.as_serde()));
         true
     }
 
     fn new_span(&self, span: &tracing_core::span::Attributes<'_>) -> tracing_core::span::Id {
-        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
-        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(span)).unwrap());
+        // println!("'{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
         self.encode(TracingWire::NewSpan(span.as_serde()));
         self.get_next_id()
     }
 
     fn record(&self, span: &tracing_core::span::Id, values: &tracing_core::span::Record<'_>) {
-        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
-        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(span)).unwrap());
-        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(values)).unwrap());
-        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(values)).unwrap());
+        // println!("'{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
+        // println!("'{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(values)).unwrap());
         self.encode(TracingWire::Record {
             span: span.as_serde(),
             values: values.as_serde(),
@@ -317,10 +278,8 @@ where
     }
 
     fn record_follows_from(&self, span: &tracing_core::span::Id, follows: &tracing_core::span::Id) {
-        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
-        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(span)).unwrap());
-        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(follows)).unwrap());
-        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(follows)).unwrap());
+        // println!("'{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
+        // println!("'{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(follows)).unwrap());
         self.encode(TracingWire::RecordFollowsFrom {
             span: span.as_serde(),
             follows: follows.as_serde(),
@@ -328,20 +287,17 @@ where
     }
 
     fn event(&self, event: &tracing::Event<'_>) {
-        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(event)).unwrap());
-        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(event)).unwrap());
+        // println!("'{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(event)).unwrap());
         self.encode(TracingWire::Event(event.as_serde()));
     }
 
     fn enter(&self, span: &tracing_core::span::Id) {
-        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
-        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(span)).unwrap());
+        // println!("'{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
         self.encode(TracingWire::Enter(span.as_serde()))
     }
 
     fn exit(&self, span: &tracing_core::span::Id) {
-        println!("- '{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
-        println!("+ '{}'", serde_json::to_string(&tracing_serde_structs::AsSerde::as_serde(span)).unwrap());
+        // println!("'{}'", serde_json::to_string(&tracing_serde::AsSerde::as_serde(span)).unwrap());
         self.encode(TracingWire::Exit(span.as_serde()))
     }
 
