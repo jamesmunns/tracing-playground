@@ -187,6 +187,9 @@ where
             tick: timer.get_ticks() as u64,
         };
 
+        // UNCOMMENT ME TO GET REPRESENTATIVE JSON DATA
+        // println!("'{}'", serde_json::to_string(&msg).unwrap());
+
         // Serialize to postcard, NOT COBS encoded
         let used = match postcard::to_slice(&msg, scratch.as_mut_slice()) {
             Ok(used) => used,
