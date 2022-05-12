@@ -1,0 +1,43 @@
+[package]
+name = "tracing-bbqueue"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bbqueue-sync = "0.5.1"
+critical-section = "0.2.7"
+
+[dependencies.rzcobs]
+version = "0.1.2"
+default-features = false
+
+[dependencies.postcard]
+version = "0.7.3"
+path = "./../../postcard"
+
+[dependencies.groundhog]
+version = "0.2.5"
+
+[dependencies.serde]
+version = "1.0.137"
+default-features = false
+features = ["derive"]
+
+[dependencies.tracing-serde-wire]
+path = "./../../crates/tracing-serde-wire"
+
+[dependencies.tracing-core]
+# git = "https://github.com/tokio-rs/tracing/"
+# version = "0.2.0"
+# branch = "master"
+path = "./../../tracing/tracing-core"
+default-features = false
+
+[dependencies.tracing-serde]
+# git = "https://github.com/tokio-rs/tracing/"
+# version = "0.2.0"
+# branch = "master"
+path = "./../../tracing/tracing-serde"
+default-features = false

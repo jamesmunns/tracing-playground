@@ -18,4 +18,3 @@ features = ["derive"]
 # branch = "master"
 path = "./../../tracing/tracing-serde"
 default-features = false
-features = ["std"]

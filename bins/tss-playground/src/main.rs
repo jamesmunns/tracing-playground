@@ -14,7 +14,8 @@ fn main() {
     let _span = span.enter();
     do_thing::doit();
 
-    // You could do this in another thread...
+    // You could do this in another thread, and might want to use
+    // `recv()` to block
     while let Ok(msg) = coll.try_recv() {
         println!("{}", serde_json::to_string(&msg).unwrap());
     }
