@@ -1,0 +1,48 @@
+[package]
+name = "tss-playground"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde_json = "1.0.81"
+
+[dependencies.groundhog]
+version = "0.2.5"
+features = ["std", "instant"]
+
+[dependencies.serde]
+version = "1.0.137"
+default-features = false
+features = ["derive"]
+
+[dependencies.tracing-serde-wire]
+path = "./../../crates/tracing-serde-wire"
+
+[dependencies.tracing-serde-subscriber]
+path = "./../../crates/tracing-serde-subscriber"
+
+[dependencies.tracing-core]
+# git = "https://github.com/tokio-rs/tracing/"
+# version = "0.2.0"
+# branch = "master"
+path = "./../../tracing/tracing-core"
+
+[dependencies.tracing]
+# git = "https://github.com/tokio-rs/tracing/"
+# version = "0.2.0"
+# branch = "master"
+path = "./../../tracing/tracing"
+
+[dependencies.tracing-serde]
+# git = "https://github.com/tokio-rs/tracing/"
+# version = "0.2.0"
+# branch = "master"
+path = "./../../tracing/tracing-serde"
+
+# [dependencies.tracing-subscriber]
+# git = "https://github.com/tokio-rs/tracing/"
+# version = "0.3.0"
+# branch = "master"
+# default-features = false

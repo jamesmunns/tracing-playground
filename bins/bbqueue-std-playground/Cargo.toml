@@ -1,5 +1,5 @@
 [package]
-name = "tracing-playground"
+name = "bbqueue-std-playground"
 version = "0.1.0"
 edition = "2021"
 
@@ -13,7 +13,7 @@ kolben = "0.0.3"
 
 [dependencies.postcard]
 version = "0.7.3"
-path = "./postcard"
+path = "./../../postcard"
 features = ["use-std"]
 
 [dependencies.groundhog]
@@ -26,30 +26,30 @@ default-features = false
 features = ["derive"]
 
 [dependencies.tracing-serde-wire]
-path = "./crates/tracing-serde-wire"
+path = "./../../crates/tracing-serde-wire"
 
-[dependencies.tracing-serde-wire]
-path = "./crates/tracing-serde-subscriber"
+[dependencies.tracing-serde-subscriber]
+path = "./../../crates/tracing-serde-subscriber"
 
 [dependencies.tracing-core]
 # git = "https://github.com/tokio-rs/tracing/"
 # version = "0.2.0"
 # branch = "master"
-path = "./tracing/tracing-core"
+path = "./../../tracing/tracing-core"
 default-features = false
 
 [dependencies.tracing]
 # git = "https://github.com/tokio-rs/tracing/"
 # version = "0.2.0"
 # branch = "master"
-path = "./tracing/tracing"
+path = "./../../tracing/tracing"
 default-features = false
 
 [dependencies.tracing-serde]
 # git = "https://github.com/tokio-rs/tracing/"
 # version = "0.2.0"
 # branch = "master"
-path = "./tracing/tracing-serde"
+path = "./../../tracing/tracing-serde"
 default-features = false
 features = ["std"]
 
