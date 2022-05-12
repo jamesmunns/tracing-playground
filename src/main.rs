@@ -15,18 +15,6 @@ use tracing_serde::AsSerde;
 use tracing_serde_wire::Packet;
 use tracing_serde_wire::TracingWire;
 
-// fn main() {
-//     let msg: &[u8] = &[
-//         0, 10, 111, 117, 116, 101, 114, 95, 115, 112, 97, 110, 18, 116, 114, 97, 99, 105, 110, 103,
-//         95, 112, 108, 97, 121, 103, 114, 111, 117, 110, 100, 0, 1, 18, 116, 114, 97, 99, 105, 110,
-//         103, 95, 112, 108, 97, 121, 103, 114, 111, 117, 110, 100, 1, 11, 115, 114, 99, 47, 109, 97,
-//         105, 110, 46, 114, 115, 1, 23, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//     ];
-//     let enc = rzcobs::encode(msg);
-//     let dec = rzcobs::decode(&enc).unwrap();
-//     assert_eq!(msg, &dec);
-// }
-
 fn main() {
     let cons = BQ.init().unwrap();
     let disp = Dispatch::from_static(&BQ);

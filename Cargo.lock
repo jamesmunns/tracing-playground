@@ -415,6 +415,7 @@ dependencies = [
 name = "tracing-serde"
 version = "0.2.0"
 dependencies = [
+ "hash32",
  "heapless",
  "serde",
  "tracing-core",

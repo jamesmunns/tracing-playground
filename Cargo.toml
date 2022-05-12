@@ -28,6 +28,9 @@ features = ["derive"]
 [dependencies.tracing-serde-wire]
 path = "./crates/tracing-serde-wire"
 
+[dependencies.tracing-serde-wire]
+path = "./crates/tracing-serde-subscriber"
+
 [dependencies.tracing-core]
 # git = "https://github.com/tokio-rs/tracing/"
 # version = "0.2.0"
